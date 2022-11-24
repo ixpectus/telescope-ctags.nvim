@@ -31,7 +31,7 @@
 (defn- debug [v] (when settings.debug
                    (print (vim.inspect v))))
 
-(defn- build-shell-cmd [opts] (let [cmd opts.cmd]
+(defn- build-shell-cmd [opts] (let [cmd (vim.deepcopy opts.cmd)]
                                 (each [key value (pairs opts.exclude)]
                                   (table.insert cmd (.. :--exclude= value)))
                                 (when (not= opts.type "")
