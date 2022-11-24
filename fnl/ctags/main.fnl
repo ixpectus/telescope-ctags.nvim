@@ -42,11 +42,6 @@
                                     (table.insert cmd
                                                   (.. :--languages "="
                                                       opts.filetype))))
-                                (when (= opts.type "")
-                                  (when (not= opts.filetype "")
-                                    (table.insert cmd
-                                                  (.. :--languages "="
-                                                      opts.filetype))))
                                 (table.insert cmd opts.path)
                                 (debug (vim.fn.join cmd " "))
                                 cmd))
@@ -166,7 +161,7 @@
                                                          :sorter (sorters.get_generic_fuzzy_sorter)})]
                                 (picker:find)))))
 
-(defn RunCtagsFile [initOpts]
+(defn RunCtagsFuncFile [initOpts]
       (let [defaults {:path (vim.fn.expand "%:p")
                       :type :f
                       :show_scope true
@@ -175,7 +170,7 @@
                                         (vim.F.if_nil initOpts {}))]
           (RunCtags opts))))
 
-(defn RunCtagsFileAll [initOpts]
+(defn RunCtagsAllFile [initOpts]
       (let [defaults {:path (vim.fn.expand "%:p")
                       :show_scope true
                       :filetype vim.bo.filetype}]
@@ -183,9 +178,18 @@
                                         (vim.F.if_nil initOpts {}))]
           (RunCtags opts))))
 
-(defn RunCtagsPackage [initOpts]
+(defn RunCtagsFuncPackage [initOpts]
       (let [defaults {:path (vim.fn.expand "%:p:h")
                       :type :f
+                      :show_scope true
+                      :filetype vim.bo.filetype
+                      :show_file true}]
+        (let [opts (vim.tbl_deep_extend :force defaults
+                                        (vim.F.if_nil initOpts {}))]
+          (RunCtags opts))))
+
+(defn RunCtagsAllPackage [initOpts]
+      (let [defaults {:path (vim.fn.expand "%:p:h")
                       :show_scope true
                       :filetype vim.bo.filetype
                       :show_file true}]
@@ -209,14 +213,15 @@
                                                     (vim.call :expand :<cword>)))}]
         (let [opts (vim.tbl_deep_extend :force defaults
                                         (vim.F.if_nil initOpts {}))]
-          (RunCtagsPackage opts))))
+          (RunCtagsFuncPackage opts))))
 
 (defn init [] (set settings defaultSettings)
       (create-cmd :CtagsRoot RunCtagsRoot)
       (create-cmd :CtagsPackageCurWorldScope RunCtagsPackageCurWorldScope)
-      (create-cmd :CtagsPackage RunCtagsPackage)
-      (create-cmd :CtagsFile RunCtagsFile)
-      (create-cmd :CtagsFileAll RunCtagsFileAll)
+      (create-cmd :CtagsFuncPackage RunCtagsFuncPackage)
+      (create-cmd :CtagsAllPackage RunCtagsAllPackage)
+      (create-cmd :CtagsFuncFile RunCtagsFuncFile)
+      (create-cmd :CtagsAllFile RunCtagsAllFile)
       (create-cmd :CtagsCore RunCtags) nil)
 
 (defn setup [opts]
