@@ -24,6 +24,7 @@
                             :--recurse
                             :--fields=+n
                             :--quiet=yes
+                            :--guess-language-eagerly
                             :-f-
                             :--output-format=json]})
 
@@ -35,13 +36,14 @@
                                 (each [key value (pairs opts.exclude)]
                                   (table.insert cmd (.. :--exclude= value)))
                                 (when (not= opts.type "")
-                                  (when (not= opts.filetype "")
+                                  (when (not= opts.filetype nil)
                                     (table.insert cmd
                                                   (.. "--" opts.filetype
-                                                      :-kinds= opts.type))
-                                    (table.insert cmd
-                                                  (.. :--languages "="
-                                                      opts.filetype))))
+                                                      :-kinds= opts.type))))
+                                (when (not= opts.filetype nil)
+                                  (table.insert cmd
+                                                (.. :--languages "="
+                                                    opts.filetype)))
                                 (table.insert cmd opts.path)
                                 (debug (vim.fn.join cmd " "))
                                 cmd))
@@ -136,9 +138,6 @@
 (defn RunCtags [initOpts] (let [opts (vim.tbl_deep_extend :force settings
                                                           (vim.F.if_nil initOpts
                                                                         {}))]
-                            (when (= opts.filetype nil)
-                              (tset opts :filetype
-                                    (vim.fn.fnamemodify opts.path ":e")))
                             (let [items (filter-empty (run-shell-cmd (build-shell-cmd opts)))]
                               (var finalItems {})
                               (each [key value (pairs items)]
@@ -162,18 +161,13 @@
                                 (picker:find)))))
 
 (defn RunCtagsFuncFile [initOpts]
-      (let [defaults {:path (vim.fn.expand "%:p")
-                      :type :f
-                      :show_scope true
-                      :filetype vim.bo.filetype}]
+      (let [defaults {:path (vim.fn.expand "%:p") :type :f :show_scope true}]
         (let [opts (vim.tbl_deep_extend :force defaults
                                         (vim.F.if_nil initOpts {}))]
           (RunCtags opts))))
 
 (defn RunCtagsAllFile [initOpts]
-      (let [defaults {:path (vim.fn.expand "%:p")
-                      :show_scope true
-                      :filetype vim.bo.filetype}]
+      (let [defaults {:path (vim.fn.expand "%:p") :show_scope true}]
         (let [opts (vim.tbl_deep_extend :force defaults
                                         (vim.F.if_nil initOpts {}))]
           (RunCtags opts))))
@@ -182,7 +176,6 @@
       (let [defaults {:path (vim.fn.expand "%:p:h")
                       :type :f
                       :show_scope true
-                      :filetype vim.bo.filetype
                       :show_file true}]
         (let [opts (vim.tbl_deep_extend :force defaults
                                         (vim.F.if_nil initOpts {}))]
@@ -191,7 +184,6 @@
 (defn RunCtagsAllPackage [initOpts]
       (let [defaults {:path (vim.fn.expand "%:p:h")
                       :show_scope true
-                      :filetype vim.bo.filetype
                       :show_file true}]
         (let [opts (vim.tbl_deep_extend :force defaults
                                         (vim.F.if_nil initOpts {}))]

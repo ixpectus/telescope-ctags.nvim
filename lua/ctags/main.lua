@@ -21,7 +21,7 @@ local function create_cmd(name, func)
   return vim.api.nvim_create_user_command(name, func, defParams)
 end
 _2amodule_locals_2a["create-cmd"] = create_cmd
-local defaultSettings = {path = vim.fn.expand("%:p"), exclude = {}, debug = false, root = ".git", type = "", prompt_title = "ctags", show_file = false, show_line = true, show_scope = false, cmd = {"ctags", "--recurse", "--fields=+n", "--quiet=yes", "-f-", "--output-format=json"}}
+local defaultSettings = {path = vim.fn.expand("%:p"), exclude = {}, debug = false, root = ".git", type = "", prompt_title = "ctags", show_file = false, show_line = true, show_scope = false, cmd = {"ctags", "--recurse", "--fields=+n", "--quiet=yes", "--guess-language-eagerly", "-f-", "--output-format=json"}}
 local settings = {}
 local function debug(v)
   if settings.debug then
@@ -37,11 +37,14 @@ local function build_shell_cmd(opts)
     table.insert(cmd, ("--exclude=" .. value))
   end
   if (opts.type ~= "") then
-    if (opts.filetype ~= "") then
+    if (opts.filetype ~= nil) then
       table.insert(cmd, ("--" .. opts.filetype .. "-kinds=" .. opts.type))
-      table.insert(cmd, ("--languages" .. "=" .. opts.filetype))
     else
     end
+  else
+  end
+  if (opts.filetype ~= nil) then
+    table.insert(cmd, ("--languages" .. "=" .. opts.filetype))
   else
   end
   table.insert(cmd, opts.path)
@@ -70,8 +73,8 @@ end
 _2amodule_locals_2a["common-part"] = common_part
 local function build_make_display(confOpts)
   local opts = confOpts
-  local function _6_(entry)
-    _G.assert((nil ~= entry), "Missing argument entry on fnl/ctags/main.fnl:62")
+  local function _7_(entry)
+    _G.assert((nil ~= entry), "Missing argument entry on fnl/ctags/main.fnl:63")
     local display_items = {{remaining = true}, {remaining = true}}
     local items = {{(entry.value.type .. " "), "TelescopeResultsVariable"}}
     if opts.show_scope then
@@ -98,21 +101,21 @@ local function build_make_display(confOpts)
     end
     return entry_display.create({separator = "", items = display_items})(items)
   end
-  return _6_
+  return _7_
 end
 local function prepare_entry_to_telescope_display(opts, entry)
   if string.match(entry, "{") then
-    local _11_, _12_ = pcall(vim.json.decode, ("{" .. string.gsub(string.gsub(entry, "}", ""), "{", "") .. "}"))
-    if ((_11_ == true) and (nil ~= _12_)) then
-      local decoded = _12_
+    local _12_, _13_ = pcall(vim.json.decode, ("{" .. string.gsub(string.gsub(entry, "}", ""), "{", "") .. "}"))
+    if ((_12_ == true) and (nil ~= _13_)) then
+      local decoded = _13_
       local value = {type = decoded.kind, line = tonumber(decoded.line), name = decoded.name, pattern = decoded.pattern, filename = decoded.path}
       if vim.F.if_nil(opts.show_scope, false) then
         value["scope"] = vim.F.if_nil(decoded.scope, "")
       else
       end
       return {filename = value.filename, lnum = tonumber(value.line), value = value, display = build_make_display(opts), ordinal = (value.line .. value.type .. value.name .. value.filename)}
-    elseif ((_11_ == false) and (nil ~= _12_)) then
-      local errMsg = _12_
+    elseif ((_12_ == false) and (nil ~= _13_)) then
+      local errMsg = _13_
       return error(string.format("error %s on parse ctag results %s", errMsg, entry))
     else
       return nil
@@ -157,12 +160,12 @@ _2amodule_locals_2a["trim"] = trim
 local function remove_items_common_part(items, common_part0)
   if (common_part0 ~= nil) then
     local res
-    local function _19_(entry)
-      _G.assert((nil ~= entry), "Missing argument entry on fnl/ctags/main.fnl:129")
+    local function _20_(entry)
+      _G.assert((nil ~= entry), "Missing argument entry on fnl/ctags/main.fnl:130")
       do end (entry.value)["scope"] = trim(string.gsub(entry.value.scope, common_part0, "", 1), "%.")
       return entry
     end
-    res = vim.tbl_map(_19_, items)
+    res = vim.tbl_map(_20_, items)
   else
   end
   if (common_part0 == nil) then
@@ -174,10 +177,6 @@ end
 _2amodule_locals_2a["remove-items-common-part"] = remove_items_common_part
 local function RunCtags(initOpts)
   local opts = vim.tbl_deep_extend("force", settings, vim.F.if_nil(initOpts, {}))
-  if (opts.filetype == nil) then
-    opts["filetype"] = vim.fn.fnamemodify(opts.path, ":e")
-  else
-  end
   local items = filter_empty(run_shell_cmd(build_shell_cmd(opts)))
   local finalItems = {}
   for key, value in pairs(items) do
@@ -186,7 +185,7 @@ local function RunCtags(initOpts)
   remove_items_common_part(finalItems, items_common_part(finalItems))
   if (opts.show_scope and opts.scope_filter) then
     local function _23_(e)
-      _G.assert((nil ~= e), "Missing argument e on fnl/ctags/main.fnl:155")
+      _G.assert((nil ~= e), "Missing argument e on fnl/ctags/main.fnl:153")
       return opts.scope_filter(e.value.scope)
     end
     finalItems = vim.tbl_filter(_23_, finalItems)
@@ -194,7 +193,7 @@ local function RunCtags(initOpts)
   end
   local picker
   local function _25_(entry)
-    _G.assert((nil ~= entry), "Missing argument entry on fnl/ctags/main.fnl:161")
+    _G.assert((nil ~= entry), "Missing argument entry on fnl/ctags/main.fnl:159")
     return entry
   end
   picker = pickers.new(opts, {prompt_title = opts.prompt_title, finder = finders.new_table({results = finalItems, entry_maker = _25_}), sorter = sorters.get_generic_fuzzy_sorter()})
@@ -202,25 +201,25 @@ local function RunCtags(initOpts)
 end
 _2amodule_2a["RunCtags"] = RunCtags
 local function RunCtagsFuncFile(initOpts)
-  local defaults = {path = vim.fn.expand("%:p"), type = "f", show_scope = true, filetype = vim.bo.filetype}
+  local defaults = {path = vim.fn.expand("%:p"), type = "f", show_scope = true}
   local opts = vim.tbl_deep_extend("force", defaults, vim.F.if_nil(initOpts, {}))
   return RunCtags(opts)
 end
 _2amodule_2a["RunCtagsFuncFile"] = RunCtagsFuncFile
 local function RunCtagsAllFile(initOpts)
-  local defaults = {path = vim.fn.expand("%:p"), show_scope = true, filetype = vim.bo.filetype}
+  local defaults = {path = vim.fn.expand("%:p"), show_scope = true}
   local opts = vim.tbl_deep_extend("force", defaults, vim.F.if_nil(initOpts, {}))
   return RunCtags(opts)
 end
 _2amodule_2a["RunCtagsAllFile"] = RunCtagsAllFile
 local function RunCtagsFuncPackage(initOpts)
-  local defaults = {path = vim.fn.expand("%:p:h"), type = "f", show_scope = true, filetype = vim.bo.filetype, show_file = true}
+  local defaults = {path = vim.fn.expand("%:p:h"), type = "f", show_scope = true, show_file = true}
   local opts = vim.tbl_deep_extend("force", defaults, vim.F.if_nil(initOpts, {}))
   return RunCtags(opts)
 end
 _2amodule_2a["RunCtagsFuncPackage"] = RunCtagsFuncPackage
 local function RunCtagsAllPackage(initOpts)
-  local defaults = {path = vim.fn.expand("%:p:h"), show_scope = true, filetype = vim.bo.filetype, show_file = true}
+  local defaults = {path = vim.fn.expand("%:p:h"), show_scope = true, show_file = true}
   local opts = vim.tbl_deep_extend("force", defaults, vim.F.if_nil(initOpts, {}))
   return RunCtags(opts)
 end
@@ -234,7 +233,7 @@ _2amodule_2a["RunCtagsRoot"] = RunCtagsRoot
 local function RunCtagsPackageCurWorldScope(initOpts)
   local defaults
   local function _26_(v)
-    _G.assert((nil ~= v), "Missing argument v on fnl/ctags/main.fnl:213")
+    _G.assert((nil ~= v), "Missing argument v on fnl/ctags/main.fnl:204")
     return string.match(v, vim.call("expand", "<cword>"))
   end
   defaults = {scope_filter = _26_}
