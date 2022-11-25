@@ -36,10 +36,12 @@
                                 (each [key value (pairs opts.exclude)]
                                   (table.insert cmd (.. :--exclude= value)))
                                 (when (not= opts.type "")
-                                  (when (not= opts.filetype nil)
-                                    (table.insert cmd
-                                                  (.. "--" opts.filetype
-                                                      :-kinds= opts.type))))
+                                  (let [filetype (vim.F.if_nil opts.filetype
+                                                               vim.bo.filetype)]
+                                    (when (not= filetype nil)
+                                      (table.insert cmd
+                                                    (.. "--" filetype :-kinds=
+                                                        opts.type)))))
                                 (when (not= opts.filetype nil)
                                   (table.insert cmd
                                                 (.. :--languages "="
